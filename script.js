@@ -33,8 +33,32 @@ const totalCount = document.getElementById('totalCount');
 const completedCount = document.getElementById('completedCount');
 const remainingCount = document.getElementById('remainingCount');
 
+// ⬇️ 오늘 날짜(KST)를 YYYY-MM-DD 및 요일로 반환
+function getTodayKST() {
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const korea = new Date(utc + 9 * 3600000);
+    return korea;
+}
+function getTodayStr() {
+    const d = getTodayKST();
+    return d.toISOString().slice(0, 10);
+}
+function getTodayKSTFormat() {
+    const d = getTodayKST();
+    const days = ['일','월','화','수','목','금','토'];
+    return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')} (${days[d.getDay()]})`;
+}
+
+// ⬇️ 페이지 로드시 날짜 표기
+function showToday(){
+    const $today = document.querySelector('.today-date');
+    if($today) $today.textContent = getTodayKSTFormat();
+}
+
 // 페이지 로드 시 저장된 할일 불러오기
 document.addEventListener('DOMContentLoaded', () => {
+    showToday(); // 날짜 표시
     loadTodos();
     renderTodos();
     updateStats();
@@ -65,7 +89,8 @@ function addTodo() {
     const newTodo = {
         text: text,
         completed: false,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        date: getTodayStr(), // 오늘 날짜도 함께 저장
     };
 
     // Firebase Realtime Database에 저장
@@ -188,15 +213,24 @@ function cancelEdit() {
 // 할일 목록 렌더링
 function renderTodos() {
     todoList.innerHTML = '';
+    const today = getTodayStr();
 
-    if (todos.length === 0) {
+    // 할일 필터링 규칙
+    // 1. 오늘날짜 항목은 모두 표시(완료, 미완료 구분X)
+    // 2. 오늘 아닌 항목은 미완료(completed=false)만 남김
+    const visibleTodos = todos.filter(todo => {
+        if (todo.date === today) return true;
+        return (!todo.completed && todo.date !== undefined);
+    });
+
+    if (visibleTodos.length === 0) {
         emptyState.classList.add('show');
         return;
     }
 
     emptyState.classList.remove('show');
 
-    todos.forEach(todo => {
+    visibleTodos.forEach(todo => {
         const todoItem = document.createElement('div');
         todoItem.className = `todo-item ${todo.completed ? 'completed' : ''}`;
         todoItem.setAttribute('data-id', todo.id);

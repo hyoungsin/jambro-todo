@@ -266,6 +266,15 @@ header h1 {
     font-size: 1.1rem;
 }
 
+.today-date {
+  display: block;
+  margin: 8px 0 2px 0;
+  font-size: 1.18rem;
+  font-weight: 500;
+  color: #06396a;
+  letter-spacing: 1px;
+}
+
 @media (max-width: 640px) {
     .container {
         padding: 25px;
