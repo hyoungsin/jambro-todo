@@ -68,7 +68,13 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadTodos() {
     const storedTodos = localStorage.getItem('todos');
     if (storedTodos) {
-        todos = JSON.parse(storedTodos);
+        todos = JSON.parse(storedTodos).map(t => {
+            // date 필드가 없으면 한국시간 오늘 날짜로 기본값 설정
+            if (!t.date) {
+                return { ...t, date: getTodayStr() };
+            }
+            return t;
+        });
     }
 }
 
@@ -103,7 +109,8 @@ function addTodo() {
                 id: newRef.key,
                 text: text,
                 completed: false,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                date: getTodayStr()
             };
             todos.push(clientTodo);
             saveTodos();
@@ -119,7 +126,8 @@ function addTodo() {
                 id: Date.now(),
                 text: text,
                 completed: false,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                date: getTodayStr()
             };
             todos.push(fallback);
             saveTodos();
@@ -219,8 +227,9 @@ function renderTodos() {
     // 1. 오늘날짜 항목은 모두 표시(완료, 미완료 구분X)
     // 2. 오늘 아닌 항목은 미완료(completed=false)만 남김
     const visibleTodos = todos.filter(todo => {
-        if (todo.date === today) return true;
-        return (!todo.completed && todo.date !== undefined);
+        const todoDate = todo.date || today; // date 없으면 오늘로 간주
+        if (todoDate === today) return true;
+        return (!todo.completed && todoDate !== undefined);
     });
 
     if (visibleTodos.length === 0) {
